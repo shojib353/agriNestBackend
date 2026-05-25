@@ -1,0 +1,79 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+myenv/
+venv/
+env/
+
+# Django
+db.sqlite3
+*.sqlite3
+
+# Environment variables
+.env
+
+# Static & Media
+staticfiles/
+media/
+
+# Logs
+*.log
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Python build files
+build/
+dist/
+*.egg-info/
+
+# Migrations cache
+*.pyc
+
+# Coverage / Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Firebase credentials
+serviceAccount.json
+
+# Render
+.render/
+
+# Node modules (if frontend exists)
+node_modules/
+
+# Flutter / Android (if inside same repo)
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+# Android
+android/.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# Generated files
+*.lock
