@@ -142,14 +142,37 @@ class LoginView(generics.GenericAPIView):
     
 
     # Send OTP
-class SendOTPView(generics.GenericAPIView):
+# class SendOTPView(generics.GenericAPIView):
 
-    ten_minutes_ago = timezone.now() - timedelta(minutes=10)
-    OTP.objects.filter(created_at__lt=ten_minutes_ago).delete()
+#     ten_minutes_ago = timezone.now() - timedelta(minutes=10)
+#     OTP.objects.filter(created_at__lt=ten_minutes_ago).delete()
+#     serializer_class = OTPRequestSerializer
+#     permission_classes = [AllowAny]
+
+#     def post(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         otp = serializer.save()
+
+#         # Send OTP via email
+#         send_mail(
+#             subject="Your OTP Code",
+#             message=f"Your OTP is {otp.code}. It is valid for 10 minutes.",
+#             from_email=settings.DEFAULT_FROM_EMAIL,
+#             recipient_list=[otp.user.email],
+#         )
+
+#         return Response({'detail': 'OTP sent to email'}, status=status.HTTP_200_OK)
+
+class SendOTPView(generics.GenericAPIView):
     serializer_class = OTPRequestSerializer
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
+        # ✅ MOVED HERE: Now it only runs when someone requests an OTP
+        ten_minutes_ago = timezone.now() - timedelta(minutes=10)
+        OTP.objects.filter(created_at__lt=ten_minutes_ago).delete()
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         otp = serializer.save()
