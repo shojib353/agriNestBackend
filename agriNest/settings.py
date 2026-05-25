@@ -286,13 +286,22 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # MEDIA_URL = '/media/'
 # MEDIA_ROOT = BASE_DIR / "media"
 
-# Media files (uploaded images)
 MEDIA_URL = '/media/'
-# If we are in production (Render), use Cloudinary. Otherwise, use local folders.
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Django 5 Storage Configuration
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+}
+
+# Override default storage with Cloudinary if in production
 if not DEBUG:
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-else:
-    MEDIA_ROOT = BASE_DIR / "media"
+    STORAGES["default"]["BACKEND"] = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
 
 
