@@ -353,14 +353,49 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     connection, 
                     context={'request': MockRequest(user_instance)}
                 )
+                
+                # ✅ THE FIX: Force evaluation of all nested objects (like datetimes) 
+                # into purely JSON-safe strings before handing it to Channels/Redis.
+                safe_data = json.loads(json.dumps(serializer.data, cls=DjangoJSONEncoder))
+                
                 updates.append({
                     'user_id': user_instance.id,
-                    'data': serializer.data
+                    'data': safe_data
                 })
             except Exception as e:
                 print(f"❌ SERIALIZER CRASH for user {user_instance.id}: {e}")
                 
         return updates
+
+    # @database_sync_to_async
+    # def get_connection_updates(self, connection_id):
+    #     from .serializers import ChatConnectionSerializer 
+    #     from .models import ChatConnection
+
+    #     connection = ChatConnection.objects.get(id=connection_id)
+    #     updates = []
+        
+    #     for user_instance in [connection.sender, connection.receiver]:
+    #         class MockRequest:
+    #             def __init__(self, u):
+    #                 self.user = u
+                
+    #             def build_absolute_uri(self, url):
+    #                 return url 
+                    
+    #         try:
+    #             serializer = ChatConnectionSerializer(
+    #                 connection, 
+    #                 context={'request': MockRequest(user_instance)}
+    #             )
+    #             updates.append({
+    #                 'user_id': user_instance.id,
+    #                 'data': serializer.data
+    #             })
+    #         except Exception as e:
+    #             print(f"❌ SERIALIZER CRASH for user {user_instance.id}: {e}")
+                
+    #     return updates
 
     async def notify_conversation_list_update(self, connection_id):
         """
