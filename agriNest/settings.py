@@ -80,7 +80,6 @@ INSTALLED_APPS = [
 
     # ADD THESE TWO LINES HERE:
     'cloudinary_storage',
-    'django.contrib.staticfiles',
     'cloudinary',
 ]
 
@@ -192,10 +191,19 @@ DATABASES = {
 # }
 
 
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels.layers.InMemoryChannelLayer"
+#     }
+# }
+
 CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
-    }
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379')],
+        },
+    },
 }
 
 # CACHES = {
