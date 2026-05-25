@@ -75,7 +75,7 @@ INSTALLED_APPS = [
     'products.apps.ProductsConfig',
     'driver_order.apps.DriverOrderConfig',
     'social_post.apps.SocialPostConfig',
-    'chat.apps.ChatConfig'
+    'chat.apps.ChatConfig',
 
 
     # ADD THESE TWO LINES HERE:
