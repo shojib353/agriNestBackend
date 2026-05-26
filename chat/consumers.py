@@ -332,7 +332,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             if not fcm_device:
                 return 
 
-            if msg_type == "webrtc_offer":
+            # 👇 FIX: Add "call_initiate" to this list!
+            if msg_type in ["webrtc_offer", "call_initiate"]: 
+                # 🔴 CALLS: Send DATA ONLY so Flutter can process it in the background
                 message = messaging.Message(
                     data={
                         "connection_id": str(connection_id),
@@ -343,6 +345,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     token=fcm_device.token,
                 )
             else:
+                # 🔵 CHAT MESSAGES: Standard notification handled by Android
                 message = messaging.Message(
                     notification=messaging.Notification(
                         title=f"New message from {self.user.full_name}",
