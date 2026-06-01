@@ -26,6 +26,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from asgiref.sync import sync_to_async
 import asyncio
+import threading
 
 User = get_user_model()
 
@@ -167,15 +168,6 @@ class LoginView(generics.GenericAPIView):
 
 #         return Response({'detail': 'OTP sent to email'}, status=status.HTTP_200_OK)
 
-@sync_to_async
-def send_otp_email_async(subject, message, from_email, recipient_list):
-    send_mail(
-        subject,
-        message,
-        from_email,
-        recipient_list,
-        fail_silently=False,
-    )
 
 class SendOTPView(generics.GenericAPIView):
     serializer_class = OTPRequestSerializer
@@ -190,16 +182,21 @@ class SendOTPView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         otp = serializer.save()
 
-        # 🔥 ASYNC FIX: Send OTP via email in a background task
-        asyncio.create_task(
-            send_otp_email_async(
+        # 🔥 FOOLPROOF FIX: Define a quick function to send the email
+        def send_email_in_background():
+            send_mail(
                 subject="Your OTP Code",
                 message=f"Your OTP is {otp.code}. It is valid for 10 minutes.",
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[otp.user.email],
+                fail_silently=False,
             )
-        )
 
+        # Launch the function in a background daemon thread
+        email_thread = threading.Thread(target=send_email_in_background, daemon=True)
+        email_thread.start()
+
+        # Return the success response instantly to Flutter
         return Response({'detail': 'OTP sent to email'}, status=status.HTTP_200_OK)
 
 # class SendOTPView(generics.GenericAPIView):
