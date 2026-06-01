@@ -25,6 +25,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from asgiref.sync import sync_to_async
+import asyncio
 
 User = get_user_model()
 
