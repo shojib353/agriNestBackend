@@ -24,9 +24,6 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from asgiref.sync import sync_to_async
-import asyncio
-import threading
 
 User = get_user_model()
 
@@ -169,12 +166,13 @@ class LoginView(generics.GenericAPIView):
 #         return Response({'detail': 'OTP sent to email'}, status=status.HTTP_200_OK)
 
 
+
 class SendOTPView(generics.GenericAPIView):
     serializer_class = OTPRequestSerializer
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-        # Clean up old OTPs
+        # ✅ MOVED HERE: Now it only runs when someone requests an OTP
         ten_minutes_ago = timezone.now() - timedelta(minutes=10)
         OTP.objects.filter(created_at__lt=ten_minutes_ago).delete()
 
@@ -182,45 +180,15 @@ class SendOTPView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         otp = serializer.save()
 
-        # 🔥 FOOLPROOF FIX: Define a quick function to send the email
-        def send_email_in_background():
-            send_mail(
-                subject="Your OTP Code",
-                message=f"Your OTP is {otp.code}. It is valid for 10 minutes.",
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[otp.user.email],
-                fail_silently=False,
-            )
+        # Send OTP via email
+        send_mail(
+            subject="Your OTP Code",
+            message=f"Your OTP is {otp.code}. It is valid for 10 minutes.",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[otp.user.email],
+        )
 
-        # Launch the function in a background daemon thread
-        email_thread = threading.Thread(target=send_email_in_background, daemon=True)
-        email_thread.start()
-
-        # Return the success response instantly to Flutter
         return Response({'detail': 'OTP sent to email'}, status=status.HTTP_200_OK)
-
-# class SendOTPView(generics.GenericAPIView):
-#     serializer_class = OTPRequestSerializer
-#     permission_classes = [AllowAny]
-
-#     def post(self, request, *args, **kwargs):
-#         # ✅ MOVED HERE: Now it only runs when someone requests an OTP
-#         ten_minutes_ago = timezone.now() - timedelta(minutes=10)
-#         OTP.objects.filter(created_at__lt=ten_minutes_ago).delete()
-
-#         serializer = self.get_serializer(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         otp = serializer.save()
-
-#         # Send OTP via email
-#         send_mail(
-#             subject="Your OTP Code",
-#             message=f"Your OTP is {otp.code}. It is valid for 10 minutes.",
-#             from_email=settings.DEFAULT_FROM_EMAIL,
-#             recipient_list=[otp.user.email],
-#         )
-
-#         return Response({'detail': 'OTP sent to email'}, status=status.HTTP_200_OK)
     
 
 # Note: OTP verification after registration
