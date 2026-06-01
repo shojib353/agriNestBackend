@@ -18,6 +18,24 @@ class PostViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+
+    # --- NEW ENDPOINT ADDED HERE ---
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def my_posts(self, request):
+        # 1. Filter the base queryset by the currently authenticated user
+        queryset = self.get_queryset().filter(author=request.user)
+        
+        # 2. Handle pagination (highly recommended for lists of posts)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        # 3. Serialize and return the data if pagination is not configured
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    # -------------------------------
+
     @action(detail=True, methods=['post'])
     def like(self, request, pk=None):
         post = self.get_object()
