@@ -6,6 +6,7 @@ from rest_framework import generics, status
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from django.conf import settings
 from django.core.mail import send_mail
+from firebase_admin import auth
 
 from rest_framework import generics, status
 from rest_framework import permissions
@@ -443,3 +444,53 @@ class UserLocationUpdateView(generics.UpdateAPIView):
     def get_object(self):
         # Securely return the user making the request
         return self.request.user
+
+
+
+class GoogleSignInView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        id_token = request.data.get('id_token')
+
+        if not id_token:
+            return Response({'error': 'ID token is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # 1. Verify the token with Firebase
+            decoded_token = auth.verify_id_token(id_token)
+            email = decoded_token.get('email')
+            full_name = decoded_token.get('name', 'Google User')
+
+            if not email:
+                return Response({'error': 'Google token did not contain an email'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # 2. Get or Create the User
+            user, created = User.objects.get_or_create(email=email, defaults={
+                'full_name': full_name,
+                'is_verified': True, # Google users are already verified
+                'role': User.Role.BUYER # Default role
+            })
+
+            if created:
+                user.set_unusable_password() # They don't have a standard password
+                user.save()
+
+            # 3. Issue your standard JWT tokens
+            token = get_tokens_for_user(user)
+            update_last_login(None, user)
+
+            return Response({
+                'user': {
+                    'email': user.email,
+                    'full_name': user.full_name,
+                    'role': user.role,
+                    'location': user.location
+                },
+                'token': token
+            }, status=status.HTTP_200_OK)
+
+        except auth.InvalidIdTokenError:
+            return Response({'error': 'Invalid or expired Google token'}, status=status.HTTP_401_UNAUTHORIZED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -3,13 +3,14 @@ from rest_framework.routers import DefaultRouter
 
 
 from driver_order.views import DriverOrderViewSet
-from .views import CustomTokenRefreshView, DriverProfileViewSet, FCMTokenUpdateView, LogoutView, RegisterView, LoginView, ResetPasswordView, SellerProfileViewSet, SendOTPView, UserLocationUpdateView, VerifyOTPForRegistrationView, VerifyOTPView,UserProfileView
+from .views import CustomTokenRefreshView, DriverProfileViewSet, FCMTokenUpdateView, GoogleSignInView, LogoutView, RegisterView, LoginView, ResetPasswordView, SellerProfileViewSet, SendOTPView, UserLocationUpdateView, VerifyOTPForRegistrationView, VerifyOTPView,UserProfileView
 router = DefaultRouter()
 router.register(r'sellers', SellerProfileViewSet, basename='seller')
 router.register(r'drivers', DriverProfileViewSet, basename='driver')
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
+    path('google/', GoogleSignInView.as_view(), name='google_login'),
     path('login/', LoginView.as_view(), name='login'),
     path('refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('logout/', LogoutView.as_view(), name='logout'),
