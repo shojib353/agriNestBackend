@@ -72,20 +72,30 @@ class LogoutSerializer(serializers.Serializer):
 
 
 
+# class OTPRequestSerializer(serializers.Serializer):
+#     email = serializers.EmailField()
+
+#     def create(self, validated_data):
+#         email = validated_data['email']
+#         try:
+#             user = User.objects.get(email=email)
+#         except User.DoesNotExist:
+#             raise serializers.ValidationError("User not found")
+
+#         # Generate 6-digit OTP
+#         otp_code = str(random.randint(100000, 999999))
+#         otp = OTP.objects.create(user=user, code=otp_code)
+#         return otp
+
 class OTPRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
-    def create(self, validated_data):
-        email = validated_data['email']
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            raise serializers.ValidationError("User not found")
-
-        # Generate 6-digit OTP
-        otp_code = str(random.randint(100000, 999999))
-        otp = OTP.objects.create(user=user, code=otp_code)
-        return otp
+    def validate_email(self, value):
+        # Best Practice: We check if the user exists right here in the serializer!
+        # If they don't exist, this throws a 400 Bad Request automatically.
+        if not User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("No account found with this email address.")
+        return value
 
 class OTPVerifySerializer(serializers.Serializer):
     email = serializers.EmailField()

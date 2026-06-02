@@ -167,28 +167,82 @@ class LoginView(generics.GenericAPIView):
 
 
 
+# class SendOTPView(generics.GenericAPIView):
+#     serializer_class = OTPRequestSerializer
+#     permission_classes = [AllowAny]
+
+#     def post(self, request, *args, **kwargs):
+#         # ✅ MOVED HERE: Now it only runs when someone requests an OTP
+#         ten_minutes_ago = timezone.now() - timedelta(minutes=10)
+#         OTP.objects.filter(created_at__lt=ten_minutes_ago).delete()
+
+#         serializer = self.get_serializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         otp = serializer.save()
+
+#         # Send OTP via email
+#         send_mail(
+#             subject="Your OTP Code",
+#             message=f"Your OTP is {otp.code}. It is valid for 10 minutes.",
+#             from_email=settings.DEFAULT_FROM_EMAIL,
+#             recipient_list=[otp.user.email],
+#         )
+
+#         return Response({'detail': 'OTP sent to email'}, status=status.HTTP_200_OK)
+
 class SendOTPView(generics.GenericAPIView):
+    """
+    Handles validating the user, requesting the OTP from the external PHP script,
+    and saving the generated OTP to the database.
+    """
     serializer_class = OTPRequestSerializer
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-        # ✅ MOVED HERE: Now it only runs when someone requests an OTP
-        ten_minutes_ago = timezone.now() - timedelta(minutes=10)
-        OTP.objects.filter(created_at__lt=ten_minutes_ago).delete()
-
+        # 1. Validate request (The serializer now checks if the user exists)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        otp = serializer.save()
+        email = serializer.validated_data.get('email')
 
-        # Send OTP via email
-        send_mail(
-            subject="Your OTP Code",
-            message=f"Your OTP is {otp.code}. It is valid for 10 minutes.",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[otp.user.email],
-        )
+        # 2. Fetch the User object
+        user = User.objects.get(email=email)
 
-        return Response({'detail': 'OTP sent to email'}, status=status.HTTP_200_OK)
+        # 3. Clean up old OTPs for this specific user
+        ten_minutes_ago = timezone.now() - timedelta(minutes=10)
+        OTP.objects.filter(user=user, created_at__lt=ten_minutes_ago).delete()
+
+        # 4. Call the Third-Party OTP Service
+        url = "https://minepico.com/Pico/API/agrinestTestSmtp.php"
+        query_params = {'Vl485SilT4': email}
+
+        try:
+            api_response = requests.post(url, params=query_params, timeout=10)
+            response_data = api_response.json()
+
+            # 5. Extract data
+            api_status = None
+            otp_code = None
+
+            if isinstance(response_data, list) and len(response_data) > 0:
+                first_item = response_data[0]
+                if isinstance(first_item, dict):
+                    api_status = first_item.get('status')
+                    otp_code = first_item.get('otp')
+
+            # 6. Save the OTP to your Model on success
+            if api_status == 'success' and otp_code:
+                OTP.objects.create(
+                    user=user, 
+                    code=otp_code
+                )
+                return Response({'detail': 'OTP sent successfully.'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'detail': 'External API failed to send OTP.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        except requests.exceptions.RequestException as e:
+            return Response({'detail': 'Error connecting to OTP service.', 'error': str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except ValueError:
+            return Response({'detail': 'Invalid JSON response from external API.'}, status=status.HTTP_502_BAD_GATEWAY)
     
 
 # Note: OTP verification after registration
