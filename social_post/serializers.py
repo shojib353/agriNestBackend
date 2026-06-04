@@ -69,5 +69,5 @@ class PostSerializer(serializers.ModelSerializer):
 class ReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Report
-        fields = ['id', 'reporter', 'post', 'comment', 'reason', 'status', 'created_at']
+        fields = ['id', 'reporter', 'post', 'reason', 'status', 'created_at']
         read_only_fields = ['reporter', 'status', 'created_at']

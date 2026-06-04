@@ -60,7 +60,6 @@ class Report(models.Model):
 
     reporter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     post = models.ForeignKey(Post, on_delete=models.CASCADE, null=True, blank=True)
-    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, null=True, blank=True)
     reason = models.TextField()
     status = models.CharField(max_length=20, choices=ReportStatus.choices, default=ReportStatus.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
