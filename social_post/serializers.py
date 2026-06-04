@@ -77,6 +77,11 @@ class SavedPostSerializer(serializers.ModelSerializer):
     # Optional: If you want to return the full post details when listing saved posts, 
     # you can uncomment the line below. Otherwise, it will just return the post ID.
     post = PostSerializer(read_only=True) 
+    post_id = serializers.PrimaryKeyRelatedField(
+        queryset=Post.objects.all(), 
+        source='post',  # This maps the ID back to the 'post' model field
+        write_only=True
+    )
 
     class Meta:
         model = SavedPost
