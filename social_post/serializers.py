@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Post, PostImage, Like, Comment, Report
+from .models import Post, PostImage, Like, Comment, Report, SavedPost
 from products.models import Product
 from .models import Post
 
@@ -71,3 +71,23 @@ class ReportSerializer(serializers.ModelSerializer):
         model = Report
         fields = ['id', 'reporter', 'post', 'reason', 'status', 'created_at']
         read_only_fields = ['reporter', 'status', 'created_at']
+
+
+class SavedPostSerializer(serializers.ModelSerializer):
+    # Optional: If you want to return the full post details when listing saved posts, 
+    # you can uncomment the line below. Otherwise, it will just return the post ID.
+    post = PostSerializer(read_only=True) 
+
+    class Meta:
+        model = SavedPost
+        fields = ['id', 'user', 'post', 'created_at']
+        read_only_fields = ['user', 'created_at']
+
+    def create(self, validated_data):
+        # The user is automatically pulled from the request context in the view
+        user = self.context['request'].user
+        post = validated_data['post']
+        
+        # get_or_create prevents duplicate saves if the user spams the button
+        saved_post, created = SavedPost.objects.get_or_create(user=user, post=post)
+        return saved_post

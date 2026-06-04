@@ -63,3 +63,17 @@ class Report(models.Model):
     reason = models.TextField()
     status = models.CharField(max_length=20, choices=ReportStatus.choices, default=ReportStatus.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
+
+class SavedPost(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='saved_posts')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='saved_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Prevents a user from saving the exact same post multiple times
+        unique_together = ('user', 'post')
+        # Ensures that when a user views their saved posts, the newest ones are at the top
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user} saved {self.post}"

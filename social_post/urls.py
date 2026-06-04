@@ -6,5 +6,6 @@ router = DefaultRouter()
 router.register('posts', views.PostViewSet, basename='posts')
 router.register('comments', views.CommentViewSet, basename='comments')
 router.register('reports', views.ReportViewSet, basename='reports')
+router.register(r'saved-posts', views.SavedPostViewSet, basename='saved-posts')
 
 urlpatterns = router.urls

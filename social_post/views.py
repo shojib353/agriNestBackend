@@ -1,8 +1,8 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Post, Comment, Like, Report
-from .serializers import PostSerializer, CommentSerializer, ReportSerializer
+from .models import Post, Comment, Like, Report, SavedPost
+from .serializers import PostSerializer, CommentSerializer, ReportSerializer, SavedPostSerializer
 from rest_framework.parsers import MultiPartParser, FormParser
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -87,3 +87,16 @@ class ReportViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(reporter=self.request.user)
+
+
+class SavedPostViewSet(viewsets.ModelViewSet):
+    serializer_class = SavedPostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Ensure users can only see and delete their own saved posts
+        return SavedPost.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        # Automatically assign the logged-in user when saving a post
+        serializer.save(user=self.request.user)
