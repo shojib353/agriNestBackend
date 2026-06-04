@@ -85,7 +85,7 @@ class SavedPostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SavedPost
-        fields = ['id', 'user', 'post', 'created_at']
+        fields = ['id', 'user', 'post','post_id', 'created_at']
         read_only_fields = ['user', 'created_at']
 
     def create(self, validated_data):
